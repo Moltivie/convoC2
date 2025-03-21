@@ -83,7 +83,7 @@ func Start(verbose bool, serverURL string, timeout int, webhookURL string, comma
 			}
 
 			// Check for the command in the log file
-			command = readCommand(logFileContent, commandRegex)
+			command = readCommand(logFileContent, commandRegex, agent.agentID)
 			if command != "" {
 				logFilePath = logFile
 				break // Stop searching after finding the command

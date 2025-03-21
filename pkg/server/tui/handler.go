@@ -114,7 +114,15 @@ func (m *model) handleCmdSession(enteredCommand string) {
 		return
 	}
 
-	output, err := server.ExecuteCmdPostRequestWithMessageAndCommand(m.selectedAgent.ChatUrl, m.selectedAgent.AuthToken, message, command, m.commandResponseChan)
+	output, err := server.ExecuteCmdPostRequestWithMessageAndCommand(
+		m.selectedAgent.ChatUrl,
+		m.selectedAgent.AuthToken,
+		message,
+		command,
+		m.selectedAgent.AgentId,
+		m.commandResponseChan,
+	)
+
 	if err != nil {
 		m.selectedAgent.CommandHistoryCmd = append(m.selectedAgent.CommandHistoryCmd, errorStyle.Render(err.Error()))
 	} else {
